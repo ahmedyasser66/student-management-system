@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>نظام إدارة وتحليل نتائج الطلاب</title>
+
+    <!-- Bootstrap 5 (RTL) + Bootstrap Icons + خط Cairo -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --navy: #12263f;
+        --navy-light: #1c3a5e;
+        --teal: #0f9d8a;
+        --page-bg: #f1f4f9;
+      }
+
+      body {
+        font-family: "Cairo", "Segoe UI", Tahoma, sans-serif;
+        background: var(--page-bg);
+        color: #1f2d3d;
+      }
+
+      /* شريط التنقل */
+      .app-navbar {
+        background: var(--navy);
+      }
+      .app-navbar .brand-icon {
+        background: var(--teal);
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* منطقة العنوان */
+      .hero {
+        background: var(--navy-light);
+        color: #fff;
+        padding: 40px 0 90px;
+      }
+      .hero p {
+        color: #b9c7da;
+      }
+
+      /* كروت الإحصائيات (متداخلة مع الهيرو) */
+      .stats-row {
+        margin-top: -55px;
+      }
+      .stat-card {
+        border: 0;
+        border-radius: 14px;
+        border-inline-start: 5px solid var(--accent);
+      }
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 14%, white);
+      }
+      .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      /* الكروت العامة */
+      .panel {
+        border: 0;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(18, 38, 63, 0.07);
+      }
+      .panel .card-header {
+        background: #fff;
+        border-bottom: 1px solid #e8edf4;
+        font-weight: 700;
+        padding: 16px 20px;
+        border-radius: 14px 14px 0 0;
+      }
+
+      /* الجدول */
+      .avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--navy);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      .table thead th {
+        font-size: 0.85rem;
+        color: #6b7a90;
+        font-weight: 600;
+        background: #f7f9fc;
+        white-space: nowrap;
+      }
+      .avg-cell {
+        min-width: 150px;
+      }
+
+      .chart-box {
+        position: relative;
+        height: 280px;
+      }
+
+      /* ============ شاشة الـ Console ============ */
+      .console-box {
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(18, 38, 63, 0.12);
+      }
+      .console-bar {
+        background: #0b1626;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .console-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .console-title {
+        margin-inline-start: 10px;
+        color: #8da2bd;
+        font-size: 0.82rem;
+        font-family: Consolas, "Courier New", monospace;
+        direction: ltr;
+      }
+      .console-actions {
+        margin-inline-start: auto;
+        display: flex;
+        gap: 6px;
+      }
+      .console-actions .btn {
+        --bs-btn-padding-y: 2px;
+        --bs-btn-padding-x: 10px;
+        --bs-btn-font-size: 0.78rem;
+      }
+
+      #console-output {
+        background: #0f1e33;
+        color: #d6e2f0;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.88rem;
+        padding: 10px 0;
+        height: 380px;
+        overflow: auto;
+      }
+      #console-output:empty::before {
+        content: "لا توجد مخرجات بعد...";
+        display: block;
+        padding: 12px 16px;
+        color: #5d7391;
+        font-family: "Cairo", sans-serif;
+      }
+
+      .log-line {
+        display: flex;
+        gap: 14px;
+        padding: 3px 16px;
+        border-inline-start: 3px solid transparent;
+      }
+      .log-line:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .log-num {
+        flex: 0 0 26px;
+        color: #4a607d;
+        text-align: end;
+        user-select: none;
+      }
+      .log-content {
+        flex: 1;
+        min-width: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* عنوان القسم */
+      .log-heading {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed #27405f;
+        border-inline-start-color: #5eead4;
+        background: rgba(94, 234, 212, 0.06);
+      }
+      .log-heading .log-content {
+        color: #5eead4;
+        font-weight: 700;
+        font-family: "Cairo", sans-serif;
+        font-size: 0.95rem;
+      }
+      .log-line:first-child.log-heading {
+        margin-top: 0;
+        border-top: 0;
+      }
+
+      /* سطر تقرير الطالب */
+      .report-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        font-family: "Cairo", sans-serif;
+      }
+      .report-key {
+        color: #7b91ad;
+        font-size: 0.8rem;
+      }
+      .report-name {
+        color: #fff;
+        font-weight: 700;
+      }
+      .report-value {
+        color: #e7eef8;
+      }
+      .report-pass {
+        color: #4ade80;
+        font-weight: 700;
+      }
+      .report-review {
+        color: #fbbf24;
+        font-weight: 700;
+      }
+      .report-grade {
+        padding: 0 9px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: #0f1e33;
+      }
+      .grade-A, .grade-B { background: #4ade80; }
+      .grade-C { background: #38bdf8; }
+      .grade-D, .grade-E { background: #fbbf24; }
+      .grade-F { background: #f87171; }
+
+      /* عرض الكائنات (JSON) */
+      .log-json {
+        margin: 0;
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+        text-align: left;
+        white-space: pre-wrap;
+      }
+      .tok-key { color: #7dd3fc; }
+      .tok-str { color: #fdba74; }
+      .tok-num { color: #86efac; }
+      .tok-bool { color: #f0abfc; }
+
+      /* تحذيرات وأخطاء */
+      .log-warn { background: rgba(251, 191, 36, 0.09); border-inline-start-color: #fbbf24; }
+      .log-error { background: rgba(248, 113, 113, 0.12); border-inline-start-color: #f87171; color: #fecaca; }
+
+      .console-status {
+        background: #0b1626;
+        color: #6b819e;
+        font-size: 0.78rem;
+        padding: 6px 16px;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- شريط التنقل -->
+    <nav class="navbar app-navbar navbar-dark">
+      <div class="container">
+        <span class="navbar-brand d-flex align-items-center gap-2 mb-0">
+          <span class="brand-icon"><i class="bi bi-mortarboard-fill"></i></span>
+          نظام نتائج الطلاب
+        </span>
+        <span class="navbar-text small d-none d-md-inline">
+          JavaScript · Classes · map / filter / reduce
+        </span>
+      </div>
+    </nav>
+
+    <!-- العنوان -->
+    <header class="hero">
+      <div class="container">
+        <h1 class="h2 fw-bold mb-2">لوحة إدارة وتحليل النتائج</h1>
+        <p class="mb-0">
+          تقرير أكاديمي كامل لكل طالب، مع لجنة الرأفة ومخرجات الـ Console.
+        </p>
+      </div>
+    </header>
+
+    <main class="container pb-5">
+      <!-- الإحصائيات -->
+      <section class="row g-3 stats-row mb-4" id="stats-row"></section>
+
+      <!-- الجدول -->
+      <section class="card panel mb-4">
+        <div
+          class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2"
+        >
+          <span><i class="bi bi-table ms-1"></i> تقرير الطلاب</span>
+          <div class="btn-group btn-group-sm" role="group" id="filter-buttons">
+            <button type="button" class="btn btn-outline-secondary active" data-filter="all">
+              الكل
+            </button>
+            <button type="button" class="btn btn-outline-success" data-filter="passed">
+              ناجح
+            </button>
+            <button type="button" class="btn btn-outline-warning" data-filter="review">
+              يحتاج مراجعة
+            </button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>رقم الجلوس</th>
+                <th>الطالب</th>
+                <th>المتوسط</th>
+                <th class="text-center">التقدير</th>
+                <th class="text-center">الحضور</th>
+                <th class="text-center">النتيجة</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="row g-4 mb-4">
+        <!-- الرسم البياني -->
+        <div class="col-lg-7">
+          <section class="card panel h-100">
+            <div class="card-header"><i class="bi bi-bar-chart-fill ms-1"></i> مقارنة المتوسطات</div>
+            <div class="card-body">
+              <div class="chart-box">
+                <canvas id="averages-chart"></canvas>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- لجنة الرأفة -->
+        <div class="col-lg-5">
+          <section class="card panel h-100">
+            <div class="card-header">
+              <i class="bi bi-heart-pulse-fill ms-1 text-danger"></i> لجنة الرأفة
+            </div>
+            <ul class="list-group list-group-flush" id="graced-list"></ul>
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+              <span class="text-muted">المتوسط بعد التعديل</span>
+              <span class="fs-4 fw-bold text-success" id="leniency-average">0.00</span>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Console -->
+      <section class="console-box">
+        <div class="console-bar">
+          <span class="console-dot" style="background: #ff5f57"></span>
+          <span class="console-dot" style="background: #febc2e"></span>
+          <span class="console-dot" style="background: #28c840"></span>
+          <span class="console-title">Console Output</span>
+
+          <div class="console-actions">
+            <button type="button" class="btn btn-outline-light" id="console-rerun">
+              <i class="bi bi-arrow-clockwise"></i> إعادة التشغيل
+            </button>
+            <button type="button" class="btn btn-outline-light" id="console-copy">
+              <i class="bi bi-clipboard"></i> <span>نسخ</span>
+            </button>
+            <button type="button" class="btn btn-outline-light" id="console-clear">
+              <i class="bi bi-trash3"></i> مسح
+            </button>
+          </div>
+        </div>
+
+        <div id="console-output" aria-live="polite"></div>
+
+        <div class="console-status">
+          <span>عدد المخرجات: <strong id="console-count">0</strong></span>
+          <span dir="ltr">node index.js</span>
+        </div>
+      </section>
+
+      <!-- الفوتر -->
+      <footer class="text-center mt-4">
+        <div class="border-top pt-3">
+          <span class="fw-bold">إعداد: أحمد ياسر</span>
+          <span class="text-muted mx-2">|</span>
+          <span class="text-muted">ID: 2301511</span>
+        </div>
+      </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- 1) عكس الـ Console داخل الصفحة (لازم قبل index.js) -->
+    <script>
+      const consoleOutput = document.getElementById("console-output");
+      const consoleCounter = document.getElementById("console-count");
+      let consoleHistory = []; // نسخة نصية للمخرجات (للنسخ)
+      let consoleLineNumber = 0;
+
+      const escapeHtml = (text) =>
+        text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      // تلوين الكائنات (JSON)
+      function highlightJson(json) {
+        const pattern =
+          /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+
+        return escapeHtml(json).replace(pattern, (match) => {
+          let className = "tok-num";
+
+          if (match.startsWith('"')) {
+            className = match.endsWith(":") ? "tok-key" : "tok-str";
+          } else if (/true|false|null/.test(match)) {
+            className = "tok-bool";
+          }
+          return `<span class="${className}">${match}</span>`;
+        });
+      }
+
+      // سطر تقرير الطالب: "الاسم: ... | المتوسط: ... | التقدير: ... | النتيجة: ..."
+      function renderReportLine(text) {
+        const items = text.split(" | ").map((part) => {
+          const [key, ...rest] = part.split(": ");
+          const value = escapeHtml(rest.join(": "));
+
+          let valueClass = "report-value";
+          let valueHtml = value;
+
+          if (key === "الاسم") valueClass = "report-name";
+          if (key === "التقدير") valueHtml = `<span class="report-grade grade-${value}">${value}</span>`;
+          if (key === "النتيجة") valueClass = value === "ناجح" ? "report-pass" : "report-review";
+
+          return `<span><span class="report-key">${escapeHtml(key)}</span> <span class="${valueClass}">${valueHtml}</span></span>`;
+        });
+
+        return `<div class="report-line">${items.join("")}</div>`;
+      }
+
+      function renderArgument(arg) {
+        if (arg !== null && typeof arg === "object") {
+          return `<pre class="log-json" dir="ltr">${highlightJson(JSON.stringify(arg, null, 2))}</pre>`;
+        }
+
+        const text = String(arg);
+        if (text.startsWith("الاسم:") && text.includes(" | ")) {
+          return renderReportLine(text);
+        }
+        return `<span dir="auto">${escapeHtml(text)}</span>`;
+      }
+
+      function appendConsoleEntry(args, level = "log") {
+        const plainText = args
+          .map((arg) => (typeof arg === "object" && arg !== null ? JSON.stringify(arg, null, 2) : String(arg)))
+          .join(" ");
+
+        consoleHistory.push(plainText);
+        consoleLineNumber++;
+
+        const line = document.createElement("div");
+        line.className = `log-line log-${level}`;
+
+        let contentHtml;
+        if (typeof args[0] === "string" && plainText.includes("==========")) {
+          line.classList.add("log-heading");
+          contentHtml = escapeHtml(plainText.replace(/=+/g, "").trim());
+        } else {
+          contentHtml = args.map(renderArgument).join(" ");
+        }
+
+        line.innerHTML = `<span class="log-num">${consoleLineNumber}</span><div class="log-content">${contentHtml}</div>`;
+        consoleOutput.appendChild(line);
+
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        consoleCounter.textContent = consoleLineNumber;
+      }
+
+      // نعكس log و warn و error، ونسيب الـ Console الحقيقي شغال
+      ["log", "warn", "error"].forEach((method) => {
+        const original = console[method].bind(console);
+
+        console[method] = (...args) => {
+          original(...args);
+          appendConsoleEntry(args, method);
+        };
+      });
+
+      window.addEventListener("error", (event) => appendConsoleEntry([event.message], "error"));
+
+      // ---------- أزرار الـ Console ----------
+      function clearConsole() {
+        consoleOutput.innerHTML = "";
+        consoleHistory = [];
+        consoleLineNumber = 0;
+        consoleCounter.textContent = 0;
+      }
+
+      document.getElementById("console-clear").addEventListener("click", clearConsole);
+
+      document.getElementById("console-rerun").addEventListener("click", () => {
+        clearConsole();
+        if (typeof main === "function") main();
+      });
+
+      document.getElementById("console-copy").addEventListener("click", async (event) => {
+        const label = event.currentTarget.querySelector("span");
+
+        try {
+          await navigator.clipboard.writeText(consoleHistory.join("\n"));
+          label.textContent = "تم النسخ";
+        } catch (error) {
+          label.textContent = "تعذر النسخ";
+        }
+        setTimeout(() => (label.textContent = "نسخ"), 1500);
+      });
+    </script>
+
+    <!-- 2) كود النظام -->
+    <script src="index.js"></script>
+
+    <!-- 3) عرض البيانات في الصفحة -->
+    <script>
+      const GRADE_COLORS = { A: "success", B: "success", C: "info", D: "warning", E: "warning", F: "danger" };
+
+      const getAverageColor = (average) => {
+        if (average >= 70) return "success";
+        if (average >= 50) return "warning";
+        return "danger";
+      };
+
+      // ---------- الإحصائيات ----------
+      function renderStats() {
+        const total = studentsList.length;
+        const passed = studentsList.filter((s) => s.getFinalResult() === RESULT_PASSED).length;
+        const classAverage =
+          studentsList.reduce((sum, s) => sum + s.calculateAverage(), 0) / (total || 1);
+
+        const cards = [
+          { label: "عدد الطلاب", value: total, icon: "bi-people-fill", accent: "#1c3a5e" },
+          { label: "ناجح", value: passed, icon: "bi-check-circle-fill", accent: "#16a34a" },
+          { label: "يحتاج مراجعة", value: total - passed, icon: "bi-exclamation-triangle-fill", accent: "#f59e0b" },
+          { label: "متوسط الدفعة", value: classAverage.toFixed(1), icon: "bi-graph-up-arrow", accent: "#0f9d8a" },
+        ];
+
+        document.getElementById("stats-row").innerHTML = cards
+          .map(
+            (card) => `
+            <div class="col-6 col-lg-3">
+              <div class="card stat-card shadow-sm" style="--accent: ${card.accent}">
+                <div class="card-body d-flex align-items-center gap-3">
+                  <div class="stat-icon"><i class="bi ${card.icon}"></i></div>
+                  <div>
+                    <div class="stat-value">${card.value}</div>
+                    <div class="text-muted small">${card.label}</div>
+                  </div>
+                </div>
+              </div>
+            </div>`
+          )
+          .join("");
+      }
+
+      // ---------- الجدول ----------
+      function renderTable(filter = "all") {
+        const tableBody = document.getElementById("students-table-body");
+
+        const visibleStudents = studentsList.filter((student) => {
+          const isPassed = student.getFinalResult() === RESULT_PASSED;
+          if (filter === "passed") return isPassed;
+          if (filter === "review") return !isPassed;
+          return true;
+        });
+
+        tableBody.innerHTML = visibleStudents
+          .map((student) => {
+            const average = student.calculateAverage();
+            const grade = student.getGrade(average);
+            const isPassed = student.getFinalResult() === RESULT_PASSED;
+            const lowAttendance = student.attendance < MIN_ATTENDANCE;
+
+            return `
+              <tr>
+                <td class="text-muted">#${student.id}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="avatar">${student.name.charAt(0)}</span>
+                    <span class="fw-semibold">${student.name}</span>
+                  </div>
+                </td>
+                <td class="avg-cell">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px">
+                      <div class="progress-bar bg-${getAverageColor(average)}" style="width: ${average}%"></div>
+                    </div>
+                    <span class="fw-bold">${average.toFixed(2)}</span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="badge rounded-pill text-bg-${GRADE_COLORS[grade]} px-3">${grade}</span>
+                </td>
+                <td class="text-center ${lowAttendance ? "text-danger" : "text-success"} fw-semibold">
+                  ${student.attendance}%
+                </td>
+                <td class="text-center">
+                  <span class="badge ${isPassed ? "bg-success" : "bg-warning text-dark"}">
+                    ${student.getFinalResult()}
+                  </span>
+                </td>
+              </tr>`;
+          })
+          .join("");
+      }
+
+      function setupFilters() {
+        const buttons = document.querySelectorAll("#filter-buttons button");
+
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            buttons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+            renderTable(button.dataset.filter);
+          });
+        });
+      }
+
+      // ---------- لجنة الرأفة ----------
+      function renderLeniencyCommittee() {
+        const list = document.getElementById("graced-list");
+        const gracedStudents = applyLeniency(findStrugglingStudents(studentsList));
+
+        list.innerHTML =
+          gracedStudents.length === 0
+            ? '<li class="list-group-item text-muted text-center py-4">لا يوجد طلاب متعثرون</li>'
+            : gracedStudents
+                .map(
+                  (student) => `
+                  <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <div>
+                      <div class="fw-semibold">${student.name}</div>
+                      <small class="text-muted">قبل الرأفة: ${student.originalAverage}</small>
+                    </div>
+                    <span class="badge bg-success fs-6">
+                      <i class="bi bi-arrow-up-short"></i>${student.newAverage}
+                    </span>
+                  </li>`
+                )
+                .join("");
+
+        document.getElementById("leniency-average").textContent =
+          calculateLeniencyAverage(gracedStudents).toFixed(2);
+      }
+
+      // ---------- الرسم البياني ----------
+      function renderChart() {
+        if (typeof Chart === "undefined") return; // لو مفيش إنترنت
+
+        Chart.defaults.font.family = "Cairo, sans-serif";
+
+        new Chart(document.getElementById("averages-chart"), {
+          type: "bar",
+          data: {
+            labels: studentsList.map((s) => s.name),
+            datasets: [
+              {
+                label: "المتوسط",
+                data: studentsList.map((s) => Number(s.calculateAverage().toFixed(2))),
+                backgroundColor: studentsList.map((s) =>
+                  s.getFinalResult() === RESULT_PASSED ? "#16a34a" : "#f59e0b"
+                ),
+                borderRadius: 8,
+                maxBarThickness: 56,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, max: 100 } },
+          },
+        });
+      }
+
+      renderStats();
+      renderTable();
+      setupFilters();
+      renderLeniencyCommittee();
+      renderChart();
+    </script>
+  </body>
+</html>
