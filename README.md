@@ -66,7 +66,7 @@ student-management-system/
 
 1. حمّل المشروع أو انسخه:
    ```bash
-   git clone https://github.com/USERNAME/student-management-system.git
+     git clone https://github.com/ahmedyasser66/student-management-system.git
    ```
 2. تأكد أن `index.html` و`index.js` في نفس المجلد.
 3. افتح `index.html` في المتصفح (يفضل عبر إضافة **Live Server** في VS Code).
